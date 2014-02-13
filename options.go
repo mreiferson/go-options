@@ -136,10 +136,8 @@ func coerceStringSlice(v interface{}) ([]string, error) {
 		for _, si := range v.([]interface{}) {
 			tmp = append(tmp, si.(string))
 		}
-	case StringArray:
-		for _, s := range v.(StringArray) {
-			tmp = append(tmp, s)
-		}
+	case []string:
+		tmp = v.([]string)
 	}
 	return tmp, nil
 }
@@ -159,10 +157,17 @@ func coerceFloat64Slice(v interface{}) ([]float64, error) {
 		for _, fi := range v.([]interface{}) {
 			tmp = append(tmp, fi.(float64))
 		}
-	case FloatArray:
-		for _, f := range v.(FloatArray) {
+	case []string:
+		for _, s := range v.([]string) {
+			f, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+			if err != nil {
+				return nil, err
+			}
 			tmp = append(tmp, f)
 		}
+	case []float64:
+		log.Printf("%+v", v)
+		tmp = v.([]float64)
 	}
 	return tmp, nil
 }
