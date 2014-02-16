@@ -57,8 +57,8 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 			v = flagInst.Value.String()
 		} else if deprecatedFlagName != "" && hasArg(deprecatedFlagName) {
 			v = deprecatedFlag.Value.String()
-			log.Printf("WARNING: use of the --%s command line flag is deprecated",
-				deprecatedFlagName)
+			log.Printf("WARNING: use of the --%s command line flag is deprecated (use --%s)",
+				deprecatedFlagName, flagName)
 		} else {
 			cfgVal, ok := cfg[cfgName]
 			if !ok {
