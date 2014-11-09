@@ -1,3 +1,4 @@
+// Combine struct values with command line flag's and config file options
 package options
 
 import (
@@ -13,6 +14,16 @@ import (
 	"time"
 )
 
+// Resolve adds values set via FlagSet or a config map onto an options structure
+//
+// the Options struct supports struct tags "flag", "cfg", and "deprecated"
+//
+// Resolve the flags happens with the following priority (highest to lowest):
+//
+//   1. Command line flag
+//   2. Deprecated command line flag
+//   3. Config file value
+//   4. Options default value
 func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interface{}) {
 	val := reflect.ValueOf(options).Elem()
 	typ := val.Type()
