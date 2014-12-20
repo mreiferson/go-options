@@ -201,14 +201,38 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 			return nil, err
 		}
 		return int(i), nil
+	case int16:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return int16(i), nil
+	case uint16:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint16(i), nil
 	case int32:
 		i, err := coerceInt64(v)
 		if err != nil {
 			return nil, err
 		}
 		return int32(i), nil
+	case uint32:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint32(i), nil
 	case int64:
 		return coerceInt64(v)
+	case uint64:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint64(i), nil
 	case string:
 		return coerceString(v)
 	case time.Duration:
