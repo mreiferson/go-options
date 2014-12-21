@@ -33,5 +33,4 @@ func ExampleResolve() {
 	fmt.Printf("%#v", opts)
 	options.Resolve(opts, flagSet, cfg)
 	fmt.Printf("%#v", opts)
-
 }

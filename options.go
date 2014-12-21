@@ -1,4 +1,5 @@
-// Combine struct values with command line flag's and config file options
+// options resolves configuration values set via command line flags, config files, and default
+// struct values
 package options
 
 import (
@@ -14,16 +15,24 @@ import (
 	"time"
 )
 
-// Resolve adds values set via FlagSet or a config map onto an options structure
+// Resolve combines configuration values set via command line flags (FlagSet) or an externally
+// parsed config file (map) onto an options struct.
 //
-// the Options struct supports struct tags "flag", "cfg", and "deprecated"
+// The options struct supports struct tags "flag", "cfg", and "deprecated", ex:
 //
-// Resolve the flags happens with the following priority (highest to lowest):
+// 	type Options struct {
+// 		MaxSize     int64         `flag:"max-size" cfg:"max_size"`
+// 		Timeout     time.Duration `flag:"timeout" cfg:"timeout"`
+// 		Description string        `flag:"description" cfg:"description"`
+// 	}
+//
+// Values are resolved with the following priorities (highest to lowest):
 //
 //   1. Command line flag
 //   2. Deprecated command line flag
 //   3. Config file value
-//   4. Options default value
+//   4. Options struct default value
+//
 func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interface{}) {
 	val := reflect.ValueOf(options).Elem()
 	typ := val.Type()
@@ -201,14 +210,38 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 			return nil, err
 		}
 		return int(i), nil
+	case int16:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return int16(i), nil
+	case uint16:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint16(i), nil
 	case int32:
 		i, err := coerceInt64(v)
 		if err != nil {
 			return nil, err
 		}
 		return int32(i), nil
+	case uint32:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint32(i), nil
 	case int64:
 		return coerceInt64(v)
+	case uint64:
+		i, err := coerceInt64(v)
+		if err != nil {
+			return nil, err
+		}
+		return uint64(i), nil
 	case string:
 		return coerceString(v)
 	case time.Duration:
