@@ -3,7 +3,6 @@
 package options
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -57,13 +56,13 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 		// if they aren't found (hence the panic)
 		flagInst := flagSet.Lookup(flagName)
 		if flagInst == nil {
-			log.Panicf("ERROR: flag %s does not exist", flagName)
+			log.Panicf("ERROR: flag %q does not exist", flagName)
 		}
 		var deprecatedFlag *flag.Flag
 		if deprecatedFlagName != "" {
 			deprecatedFlag = flagSet.Lookup(deprecatedFlagName)
 			if deprecatedFlag == nil {
-				log.Panicf("ERROR: deprecated flag %s does not exist", deprecatedFlagName)
+				log.Panicf("ERROR: deprecated flag %q does not exist", deprecatedFlagName)
 			}
 		}
 
@@ -106,7 +105,7 @@ func coerceBool(v interface{}) (bool, error) {
 	case int, int16, uint16, int32, uint32, int64, uint64:
 		return reflect.ValueOf(v).Int() == 0, nil
 	}
-	return false, errors.New("invalid value type")
+	return false, fmt.Errorf("invalid bool value type %T", v)
 }
 
 func coerceInt64(v interface{}) (int64, error) {
@@ -116,7 +115,17 @@ func coerceInt64(v interface{}) (int64, error) {
 	case int, int16, uint16, int32, uint32, int64, uint64:
 		return reflect.ValueOf(v).Int(), nil
 	}
-	return 0, errors.New("invalid value type")
+	return 0, fmt.Errorf("invalid int64 value type %T", v)
+}
+
+func coerceFloat64(v interface{}) (float64, error) {
+	switch v.(type) {
+	case string:
+		return strconv.ParseFloat(v.(string), 64)
+	case float32, float64:
+		return reflect.ValueOf(v).Float(), nil
+	}
+	return 0, fmt.Errorf("invalid float64 value type %T", v)
 }
 
 func coerceDuration(v interface{}, arg string) (time.Duration, error) {
@@ -142,7 +151,7 @@ func coerceDuration(v interface{}, arg string) (time.Duration, error) {
 	case time.Duration:
 		return v.(time.Duration), nil
 	}
-	return 0, errors.New("invalid value type")
+	return 0, fmt.Errorf("invalid time.Duration value type %T", v)
 }
 
 func coerceStringSlice(v interface{}) ([]string, error) {
@@ -242,6 +251,12 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 			return nil, err
 		}
 		return uint64(i), nil
+	case float64:
+		i, err := coerceFloat64(v)
+		if err != nil {
+			return nil, err
+		}
+		return float64(i), nil
 	case string:
 		return coerceString(v)
 	case time.Duration:
@@ -251,7 +266,7 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 	case []float64:
 		return coerceFloat64Slice(v)
 	}
-	return nil, errors.New("invalid type")
+	return nil, fmt.Errorf("invalid value type %T", v)
 }
 
 func hasArg(s string) bool {
