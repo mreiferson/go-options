@@ -18,6 +18,7 @@ func ExampleResolve() {
 	flagSet := flag.NewFlagSet("example", flag.ExitOnError)
 	flagSet.Int64("max-size", 1024768, "maximum size")
 	flagSet.Duration("timeout", 1*time.Hour, "timeout setting")
+	flagSet.String("description", "", "description info")
 	// parse command line arguments here
 	// flagSet.Parse(os.Args[1:])
 	flagSet.Parse([]string{"-timeout=5s"})
