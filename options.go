@@ -79,14 +79,14 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 			v = deprecatedFlag.Value.String()
 			log.Printf("WARNING: use of the --%s command line flag is deprecated (use --%s)",
 				deprecatedFlagName, flagName)
-		} else {
-			cfgVal, ok := cfg[cfgName]
-			if !ok {
-				// if the config file option wasn't specified just use the default
-				continue
-			}
+		} else if cfgVal, ok := cfg[cfgName]; ok {
 			v = cfgVal
+		} else {
+			// if no flag arg or config file option was specified just use the default
+			// flag value
+			v = flagInst.Value.(flag.Getter).Get()
 		}
+
 		fieldVal := val.FieldByName(field.Name)
 		coerced, err := coerce(v, fieldVal.Interface(), field.Tag.Get("arg"))
 		if err != nil {
