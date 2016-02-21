@@ -3,10 +3,11 @@ package options_test
 import (
 	"flag"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/jaytaylor/go-options"
+	"github.com/mreiferson/go-options"
 )
 
 // TestFlagSetDefaults verifies that default flag values are applied in the
@@ -29,6 +30,51 @@ func TestFlagSetDefaults(t *testing.T) {
 
 	if expected, actual := flagSet.Lookup("max-size").Value.(flag.Getter).Get().(int64), opts.MaxSize; actual != expected {
 		t.Errorf("Expected opts.MaxSize to default to %v but actual=%v", expected, actual)
+	}
+}
+
+// TestConfigWithOverlappingOsArgs verifies that flag values set via map config
+// are respected.
+func TestConfigWithOverlappingOsArgs(t *testing.T) {
+	osArgsBak := make([]string, len(os.Args))
+	for i, arg := range os.Args {
+		osArgsBak[i] = arg
+	}
+	defer func() { os.Args = osArgsBak }() // Restore os.Args afterwards.
+
+	os.Args = []string{"./logserver/logserver", "-config", "/tmp/cfg.toml"}
+
+	type ServerOptions struct {
+		Server  bool `flag:"server"`
+		Debug   bool `flag:"debug"`
+		Version bool `flag:"version"`
+	}
+
+	flagSet := flag.NewFlagSet("TestConfigWithOverlappingOsArgs", flag.PanicOnError)
+
+	flagSet.Bool("server", false, "run in server mode")
+	flagSet.Bool("debug", false, "toggle debug output")
+	flagSet.Bool("version", false, "show version information and then exit")
+
+	if err := flagSet.Parse(os.Args); err != nil {
+		t.Fatal(err)
+	}
+
+	opts := &ServerOptions{}
+	cfg := map[string]interface{}{
+		"server": true,
+	}
+
+	options.Resolve(opts, flagSet, cfg)
+
+	if expected, actual := true, opts.Server; actual != expected {
+		t.Errorf("Expected opts.Server=%v but actual=%v", expected, actual)
+	}
+	if expected, actual := false, opts.Debug; actual != expected {
+		t.Errorf("Expected opts.Debug=%v but actual=%v", expected, actual)
+	}
+	if expected, actual := false, opts.Version; actual != expected {
+		t.Errorf("Expected opts.Version=%v but actual=%v", expected, actual)
 	}
 }
 

@@ -71,6 +71,7 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 		// 1. command line flag
 		// 2. deprecated command line flag
 		// 3. config file option
+		// 4. default flag value
 		var v interface{}
 		if hasArg(flagName) {
 			v = flagInst.Value.String()
@@ -270,8 +271,11 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 }
 
 func hasArg(s string) bool {
+	if !strings.HasPrefix(s, "-") {
+		s = "-" + s
+	}
 	for _, arg := range os.Args {
-		if strings.Contains(arg, s) {
+		if strings.Split(arg, "=")[0] == s {
 			return true
 		}
 	}
