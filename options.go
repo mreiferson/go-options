@@ -84,7 +84,9 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 		} else {
 			// if no flag arg or config file option was specified just use the default
 			// flag value
-			v = flagInst.Value.(flag.Getter).Get()
+			if getter, ok := flagInst.Value.(flag.Getter); ok {
+				v = getter.Get()
+			}
 		}
 
 		fieldVal := val.FieldByName(field.Name)
