@@ -276,7 +276,7 @@ func hasArg(s string) bool {
 	if !strings.HasPrefix(s, "-") {
 		s = "-" + s
 	}
-	for _, arg := range os.Args {
+	for _, arg := range os.Args[1:] {
 		if strings.Split(arg, "=")[0] == s {
 			return true
 		}
