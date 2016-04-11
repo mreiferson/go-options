@@ -273,11 +273,8 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 }
 
 func hasArg(s string) bool {
-	if !strings.HasPrefix(s, "-") {
-		s = "-" + s
-	}
 	for _, arg := range os.Args[1:] {
-		if strings.Split(arg, "=")[0] == s {
+		if strings.TrimLeft(strings.SplitN(arg, "=", 2)[0], "-") == s {
 			return true
 		}
 	}
