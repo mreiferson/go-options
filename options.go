@@ -115,8 +115,10 @@ func coerceInt64(v interface{}) (int64, error) {
 	switch v.(type) {
 	case string:
 		return strconv.ParseInt(v.(string), 10, 64)
-	case int, int16, uint16, int32, uint32, int64, uint64:
+	case int, int16, int32, int64:
 		return reflect.ValueOf(v).Int(), nil
+	case uint16, uint32, uint64:
+		return int64(reflect.ValueOf(v).Uint()), nil
 	}
 	return 0, fmt.Errorf("invalid int64 value type %T", v)
 }
