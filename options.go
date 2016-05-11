@@ -41,6 +41,21 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 		//    deprecated - (optional) the name of the deprecated command line flag
 		//    cfg - (optional, defaults to underscored flag) the name of the config file option
 		field := typ.Field(i)
+
+		// Recursively resolve embedded types.
+		if field.Anonymous {
+			var fieldPtr reflect.Value
+			switch val.FieldByName(field.Name).Kind() {
+			case reflect.Struct:
+				fieldPtr = val.FieldByName(field.Name).Addr()
+			case reflect.Ptr:
+				fieldPtr = reflect.Indirect(val).FieldByName(field.Name)
+			}
+			if !fieldPtr.IsNil() {
+				Resolve(fieldPtr.Interface(), flagSet, cfg)
+			}
+		}
+
 		flagName := field.Tag.Get("flag")
 		deprecatedFlagName := field.Tag.Get("deprecated")
 		cfgName := field.Tag.Get("cfg")
