@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -132,5 +133,110 @@ func TestFloat64(t *testing.T) {
 		if expected, actual := testCase.Expected, configThing.Percentage; actual != expected {
 			t.Errorf("[i=%v testCase=%+v] Expected configThing.Percentage=%v but actual=%v", i, testCase, expected, actual)
 		}
+	}
+}
+
+func TestEmbeddedTypeOptions(t *testing.T) {
+	newFlagSet := func() *flag.FlagSet {
+		flagSet := flag.NewFlagSet("TestEmbeddedTypeOptions", flag.ExitOnError)
+		flagSet.Bool("peaceful", false, "peaceful flag details")
+		flagSet.Bool("inside", false, "inside flag details")
+		flagSet.Bool("undo", false, "undo flag details")
+		flagSet.Bool("install", false, "install flag details")
+		flagSet.Int("arbitrary", 0, "arbitrary flag details")
+		flagSet.String("fields", "", "fields flag details")
+		flagSet.String("user", "", "user flag details")
+		return flagSet
+	}
+
+	type EmbeddedAsValue struct {
+		Arbitrary int      `flag:"arbitrary"`
+		Fields    []string `flag:"fields"`
+	}
+
+	type EmbeddedAsPointer struct {
+		EmbeddedAsValue
+		Peaceful bool `flag:"peaceful"`
+		Inside   bool `flag:"inside"`
+		Undo     bool `flag:"undo"`
+	}
+
+	type SampleConfig struct {
+		*EmbeddedAsPointer
+		Install    bool   `flag:"install"`
+		User       string `flag:"user"`
+		otherField string
+	}
+
+	testCases := []struct {
+		Args         []string
+		CallbackFunc func(config *SampleConfig)
+	}{
+		{
+			Args: []string{"-inside"},
+			CallbackFunc: func(config *SampleConfig) {
+				if expected, actual := false, config.Peaceful; actual != expected {
+					t.Errorf("Expected config.Peaceful=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := true, config.Inside; actual != expected {
+					t.Errorf("Expected config.Inside=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := false, config.Undo; actual != expected {
+					t.Errorf("Expected config.Undo=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+			},
+		},
+		{
+			Args: []string{"-peaceful", "-undo", "-user=mreiferson"},
+			CallbackFunc: func(config *SampleConfig) {
+				if expected, actual := true, config.Peaceful; actual != expected {
+					t.Errorf("Expected config.Peaceful=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := false, config.Inside; actual != expected {
+					t.Errorf("Expected config.Inside=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := true, config.Undo; actual != expected {
+					t.Errorf("Expected config.Undo=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := "mreiferson", config.User; actual != expected {
+					t.Errorf("Expected config.User=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := 0, config.EmbeddedAsPointer.Arbitrary; actual != expected {
+					t.Errorf("Expected config.EmbeddedAsPointer.Arbitrary=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+			},
+		},
+		{
+			Args: []string{"-peaceful", "-arbitrary", "99", "-fields=a,a1,B,B1,c"},
+			CallbackFunc: func(config *SampleConfig) {
+				if expected, actual := true, config.Peaceful; actual != expected {
+					t.Errorf("Expected config.Peaceful=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := 99, config.Arbitrary; actual != expected {
+					t.Errorf("Expected config.Arbitrary=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+				if expected, actual := []string{"a", "a1", "B", "B1", "c"}, config.EmbeddedAsPointer.EmbeddedAsValue.Fields; !reflect.DeepEqual(actual, expected) {
+					t.Errorf("Expected config.EmbeddedAsPointer.EmbeddedAsValue.Fields=%v but actual=%v (config=%+v)", expected, actual, *config)
+				}
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		var (
+			config = &SampleConfig{
+				EmbeddedAsPointer: &EmbeddedAsPointer{
+					EmbeddedAsValue: EmbeddedAsValue{},
+				},
+				otherField: "hello there!",
+			}
+			flagSet = newFlagSet()
+		)
+
+		flagSet.Parse(testCase.Args)
+
+		options.Resolve(config, flagSet, nil)
+
+		testCase.CallbackFunc(config)
 	}
 }
