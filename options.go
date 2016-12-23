@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -88,9 +87,9 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 		// 3. config file option
 		// 4. default flag value
 		var v interface{}
-		if hasArg(flagName) {
+		if hasArg(flagSet, flagName) {
 			v = flagInst.Value.String()
-		} else if deprecatedFlagName != "" && hasArg(deprecatedFlagName) {
+		} else if deprecatedFlagName != "" && hasArg(flagSet, deprecatedFlagName) {
 			v = deprecatedFlag.Value.String()
 			log.Printf("WARNING: use of the --%s command line flag is deprecated (use --%s)",
 				deprecatedFlagName, flagName)
@@ -98,10 +97,8 @@ func Resolve(options interface{}, flagSet *flag.FlagSet, cfg map[string]interfac
 			v = cfgVal
 		} else {
 			// if no flag arg or config file option was specified just use the default
-			// flag value
-			if getter, ok := flagInst.Value.(flag.Getter); ok {
-				v = getter.Get()
-			}
+			// value
+			v = val.Field(i).Interface()
 		}
 
 		fieldVal := val.FieldByName(field.Name)
@@ -289,11 +286,12 @@ func coerce(v interface{}, opt interface{}, arg string) (interface{}, error) {
 	return nil, fmt.Errorf("invalid value type %T", v)
 }
 
-func hasArg(s string) bool {
-	for _, arg := range os.Args[1:] {
-		if strings.TrimLeft(strings.SplitN(arg, "=", 2)[0], "-") == s {
-			return true
+func hasArg(fs *flag.FlagSet, s string) bool {
+	var found bool
+	fs.Visit(func(flag *flag.Flag) {
+		if flag.Name == s {
+			found = true
 		}
-	}
-	return false
+	})
+	return found
 }
