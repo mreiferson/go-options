@@ -15,6 +15,7 @@ import (
 // absence of user-specified setting.
 func TestFlagSetDefaults(t *testing.T) {
 	flagSet := flag.NewFlagSet("TestFlagSetDefaults", flag.PanicOnError)
+	opts := &Options{1024768, 1 * time.Hour, ""}
 
 	flagSet.Int64("max-size", 1024768, "maximum size")
 	flagSet.Duration("timeout", 1*time.Hour, "timeout setting")
@@ -24,7 +25,6 @@ func TestFlagSetDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := &Options{}
 	cfg := map[string]interface{}{}
 
 	options.Resolve(opts, flagSet, cfg)
@@ -125,7 +125,7 @@ func TestFloat64(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		configThing := &ConfigurableThing{}
+		configThing := &ConfigurableThing{defaultValue}
 		cfg := map[string]interface{}{}
 
 		options.Resolve(configThing, flagSet, cfg)
