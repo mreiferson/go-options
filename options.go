@@ -210,7 +210,6 @@ func coerceFloat64Slice(v interface{}) ([]float64, error) {
 			tmp = append(tmp, f)
 		}
 	case []float64:
-		log.Printf("%+v", v)
 		tmp = v.([]float64)
 	}
 	return tmp, nil
